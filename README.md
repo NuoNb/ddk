@@ -14,11 +14,11 @@
 > 2. **镜像内置加载回归工具**：ddk 镜像追加 `qemu-system-arm` 与
 >    `/test/{run.sh,init,build-initramfs.py}`，配合镜像自带内核（kdir 的
 >    `arch/arm64/boot/Image`），实现"拉镜像即可测"。
-> 3. **提供可复制的 CI 模板**：[templates/qemu-load-test.yml](templates/qemu-load-test.yml)。
+> 3. **提供可复制的 CI 模板**：[.github/workflows/qemu-load-test.yml](.github/workflows/qemu-load-test.yml)。
 >
 > ### 模块仓库接入加载回归（两分钟）
 >
-> 1. 复制 `templates/qemu-load-test.yml` 到你的模块仓库 `.github/workflows/`；
+> 1. 复制 `.github/workflows/qemu-load-test.yml` 到你的模块仓库 `.github/workflows/`；
 > 2. Actions 手动触发（填 `kmi` 与镜像 tag），或把 `on:` 改成 push 自动跑；
 > 3. 结果三态：`PASS: MODULE LOADED OK` / 内核崩溃（CI 日志含完整 panic 栈）/
 >    被加载器拒绝（CI 日志含 errno 与 version magic 行）。

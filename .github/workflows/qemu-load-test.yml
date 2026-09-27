@@ -35,6 +35,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Guard（本仓库是镜像工厂，无模块可测）
+      run: |
+        if [ ! -f Makefile ]; then
+          echo "::error::本仓库没有模块 Makefile。此工作流是给模块仓库用的模板：把 .github/workflows/qemu-load-test.yml 复制到你的模块仓库后触发。"
+          exit 1
+        fi
+
     - name: Build module & QEMU load test
       run: |
         make KDIR=/opt/ddk/kdir/${{ inputs.kmi }}

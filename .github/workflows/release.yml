@@ -3,6 +3,14 @@ name: Build and Release ddk
 on:
   workflow_dispatch:
 
+# 推送镜像到本仓库的 ghcr 包空间
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REG: ghcr.io/nuonb
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -45,14 +53,32 @@ jobs:
 
     - name: Pull lfs
       run: |
+        git lfs install --skip-repo
         GIT_LFS_SKIP_SMUDGE=1 git submodule update --init --recursive --depth 1
-        git lfs pull --include="prebuilts/clang/"
+        # LFS 内容必须进子模块内拉取；主仓库范围的 lfs pull 不会下钻子模块
+        # clang + rust：部分 KMI 的 toolchain 镜像需要导入 rust 工具链
+        cd prebuilts
+        git lfs pull --include="clang/,rust/"
+        cd ..
+        # 体积自检：tarball 应为 GB 级；若仍是 ~百字节说明是 LFS 指针文件，快速失败
+        for f in prebuilts/clang/*.tar.zst prebuilts/rust/*.tar.zst; do
+          [ -f "$f" ] || continue
+          size=$(stat -c %s "$f")
+          if [ "$size" -lt 1000000 ]; then
+            echo "::error::$f 只有 ${size} 字节（LFS 指针未拉取成功）"; exit 1
+          fi
+          echo "$f: $((size/1024/1024)) MB"
+        done
         ls -al prebuilts/clang/
 
-    - name: Build image
+    - name: Login to GHCR
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Build images
       run: |
         cd docker
-        make toolchains PUSH=1
+        make builder PUSH=1 REG=${REG}
+        make toolchains PUSH=1 REG=${REG}
   
   build:
     needs: ["prepare", "toolchains"]
@@ -77,13 +103,28 @@ jobs:
 
     - name: Pull lfs
       run: |
+        git lfs install --skip-repo
         GIT_LFS_SKIP_SMUDGE=1 git submodule update --init --recursive --depth 1
-        git lfs pull --include="prebuilts/src/src.${{ matrix.source_name }}.tar.zst"
-        git lfs pull --include="prebuilts/kdir/kdir.${{ matrix.source_name }}.tar.zst"
+        # LFS 内容必须进子模块内拉取；主仓库范围的 lfs pull 不会下钻子模块
+        cd prebuilts
+        git lfs pull --include="src/src.${{ matrix.source_name }}.tar.zst"
+        git lfs pull --include="kdir/kdir.${{ matrix.source_name }}.tar.zst"
+        cd ..
+        # 体积自检：tarball 应为百 MB~GB 级；~百字节说明是 LFS 指针文件，快速失败
+        for f in prebuilts/src/src.${{ matrix.source_name }}.tar.zst prebuilts/kdir/kdir.${{ matrix.source_name }}.tar.zst; do
+          size=$(stat -c %s "$f")
+          if [ "$size" -lt 1000000 ]; then
+            echo "::error::$f 只有 ${size} 字节（LFS 指针未拉取成功）"; exit 1
+          fi
+          echo "$f: $((size/1024/1024)) MB"
+        done
         ls -al prebuilts/src/
         ls -al prebuilts/kdir/
+
+    - name: Login to GHCR
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
     - name: Build image
       run: |
         cd docker
-        make build VER=${{ matrix.source_name }} PUSH=1
+        make build VER=${{ matrix.source_name }} PUSH=1 REG=${REG} TAG_SUFFIX=-$(date -u +%Y%m%d)

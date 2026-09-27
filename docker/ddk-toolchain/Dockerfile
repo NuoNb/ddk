@@ -1,4 +1,5 @@
-FROM docker.cnb.cool/ylarod/ddk/ddk-builder:latest
+ARG BUILDER_BASE=ghcr.io/nuonb
+FROM ${BUILDER_BASE}/ddk-builder:latest
 
 WORKDIR /opt/ddk
 

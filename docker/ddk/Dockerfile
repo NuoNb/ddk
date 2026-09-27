@@ -1,5 +1,6 @@
+ARG BASE=ghcr.io/nuonb
 ARG ANDROID_VER
-FROM docker.cnb.cool/ylarod/ddk/ddk-toolchain:${ANDROID_VER}
+FROM ${BASE}/ddk-toolchain:${ANDROID_VER}
 
 WORKDIR /opt/ddk
 
@@ -37,7 +38,14 @@ RUN --mount=type=bind,source=./prebuilts/src/src.${ANDROID_VER}.tar.zst,target=/
     --mount=type=bind,source=./prebuilts/kdir/kdir.${ANDROID_VER}.tar.zst,target=/tmp/kdir.tar.zst,readonly \
     mkdir -p /opt/ddk/src/ /opt/ddk/kdir/; \
     tar -xf /tmp/src.tar.zst -C /opt/ddk/src/; \
-    tar -xf /tmp/kdir.tar.zst -C /opt/ddk/kdir/;
+    tar -xf /tmp/kdir.tar.zst -C /opt/ddk/kdir/
+
+# 加载回归工具：QEMU + 测试脚本，消费仓库"拉镜像即可测"（/test/run.sh xxx.ko）
+COPY docker/test/ /test/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends qemu-system-arm python3 && \
+    rm -rf /var/lib/apt/lists/* && \
+    chmod +x /test/run.sh /test/init;
 
 ENV DDK_ROOT=/opt/ddk \
     CROSS_COMPILE=aarch64-linux-gnu- \

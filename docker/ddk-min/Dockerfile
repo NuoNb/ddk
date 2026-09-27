@@ -1,5 +1,6 @@
+ARG BASE=ghcr.io/nuonb
 ARG ANDROID_VER
-FROM docker.cnb.cool/ylarod/ddk/ddk-toolchain:${ANDROID_VER}
+FROM ${BASE}/ddk-toolchain:${ANDROID_VER}
 
 WORKDIR /opt/ddk
 

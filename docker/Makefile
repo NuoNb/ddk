@@ -10,13 +10,16 @@ endif
 
 MATRIX   := $(shell jq -r '.matrix[] | "\(.android):\(.clang):\(.rust // "")"' $(ROOT)/mapping.json | tr '\n' ' ')
 
-# ghcr.io/ylarod
-# docker.cnb.cool/ylarod/ddk
-REG ?= docker.cnb.cool/ylarod/ddk
+# 本 fork 默认推送到自己的 ghcr 命名空间
+# ghcr.io/nuonb
+# docker.cnb.cool/ylarod/ddk（上游原值，可覆盖）
+REG ?= ghcr.io/nuonb
 IMG ?= ddk
 PUSH ?= 0
 FORCE ?= 0
 PLAT ?= linux/amd64
+# 追加到最终镜像 tag 的后缀（如 -20260927），供消费方按日期钉版本
+TAG_SUFFIX ?=
 
 DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 REV  := $(shell git -C $(ROOT) rev-parse HEAD)
@@ -51,6 +54,7 @@ toolchains:
 	    echo "==> Building toolchain $(REG)/ddk-toolchain:$$ANDROID (clang: $$CLANG$${RUST:+, rust: $$RUST})"; \
 	    DOCKER_BUILDKIT=$(BUILDKIT) $(DOCKER) buildx build \
 	      $(if $(filter 1,$(PUSH)),--platform $(PLAT) --push,--load) \
+	      --build-arg BUILDER_BASE=$(REG) \
 	      --build-arg CLANG_VER=$$CLANG \
 	      --build-arg RUST_VER=$$RUST \
 	      -f $(ROOT)/docker/ddk-toolchain/Dockerfile \
@@ -72,17 +76,18 @@ build:
 	CLANG=$$(echo $$ENTRY | cut -d: -f2); \
 	RUST=$$(echo $$ENTRY | cut -d: -f3); \
 	if [ -z "$$CLANG" ]; then echo "CLANG not found for $(VER)"; exit 2; fi; \
-	echo "==> Building $(REG)/$(IMG):$(VER) with $$CLANG $${RUST:+(rust: $$RUST)}"; \
+	echo "==> Building $(REG)/$(IMG):$(VER)$(TAG_SUFFIX) with $$CLANG $${RUST:+(rust: $$RUST)}"; \
 	DOCKER_BUILDKIT=$(BUILDKIT) $(DOCKER) buildx build \
 	  $(if $(filter 1,$(PUSH)),--platform $(PLAT) --push,) \
+	  --build-arg BASE=$(REG) \
 	  --build-arg CLANG_VER=$$CLANG \
 	  --build-arg RUST_VER=$$RUST \
 	  --build-arg ANDROID_VER=$(VER) \
-	  --build-arg VERSION=$(VER) \
+	  --build-arg VERSION=$(VER)$(TAG_SUFFIX) \
 	  --build-arg REVISION=$(REV) \
 	  --build-arg CREATED=$(DATE) \
 	  -f $(ROOT)/docker/ddk/Dockerfile \
-	  -t $(REG)/$(IMG):$(VER) $(ROOT)
+	  -t $(REG)/$(IMG):$(VER)$(TAG_SUFFIX) $(ROOT)
 
 build-all:
 	@for pair in $(MATRIX); do \
@@ -97,17 +102,18 @@ build-min:
 	CLANG=$$(echo $$ENTRY | cut -d: -f2); \
 	RUST=$$(echo $$ENTRY | cut -d: -f3); \
 	if [ -z "$$CLANG" ]; then echo "CLANG not found for $(VER)"; exit 2; fi; \
-	echo "==> Building $(REG)/ddk-min:$(VER) with $$CLANG $${RUST:+(rust: $$RUST)}"; \
+	echo "==> Building $(REG)/ddk-min:$(VER)$(TAG_SUFFIX) with $$CLANG $${RUST:+(rust: $$RUST)}"; \
 	DOCKER_BUILDKIT=$(BUILDKIT) $(DOCKER) buildx build \
 	  $(if $(filter 1,$(PUSH)),--platform $(PLAT) --push,) \
+	  --build-arg BASE=$(REG) \
 	  --build-arg CLANG_VER=$$CLANG \
 	  --build-arg RUST_VER=$$RUST \
 	  --build-arg ANDROID_VER=$(VER) \
-	  --build-arg VERSION=$(VER) \
+	  --build-arg VERSION=$(VER)$(TAG_SUFFIX) \
 	  --build-arg REVISION=$(REV) \
 	  --build-arg CREATED=$(DATE) \
 	  -f $(ROOT)/docker/ddk-min/Dockerfile \
-	  -t $(REG)/ddk-min:$(VER) $(ROOT)
+	  -t $(REG)/ddk-min:$(VER)$(TAG_SUFFIX) $(ROOT)
 
 build-min-all:
 	@for pair in $(MATRIX); do \

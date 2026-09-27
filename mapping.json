@@ -1,23 +1,23 @@
 {
   "registry": {
     "ddk": {
-      "github": "ghcr.io/ylarod/ddk",
+      "github": "ghcr.io/nuonb/ddk",
       "docker": "docker.io/ylarod/ddk",
       "cnb": "docker.cnb.cool/ylarod/ddk/ddk"
     },
     "ddk-min": {
-      "github": "ghcr.io/ylarod/ddk-min",
+      "github": "ghcr.io/nuonb/ddk-min",
       "docker": "docker.io/ylarod/ddk-min",
       "cnb": "docker.cnb.cool/ylarod/ddk/ddk-min"
     },
     "ddk-toolchain": {
-      "github": "ghcr.io/ylarod/ddk/toolchain",
+      "github": "ghcr.io/nuonb/ddk-toolchain",
       "docker": "docker.io/ylarod/ddk-toolchain",
       "cnb": "docker.cnb.cool/ylarod/ddk/ddk-toolchain"
     },
     "ddk-clang": {
       "deprecated": true,
-      "github": "ghcr.io/ylarod/ddk/clang",
+      "github": "ghcr.io/nuonb/ddk-clang",
       "docker": "docker.io/ylarod/ddk-clang",
       "cnb": "docker.cnb.cool/ylarod/ddk/ddk-clang"
     }

@@ -2,6 +2,11 @@ name: Build and Release ddk
 
 on:
   workflow_dispatch:
+    inputs:
+      kmi_filter:
+        description: '只构建该 KMI（如 android16-6.12；留空则全量 matrix）'
+        required: false
+        default: ''
 
 # 推送镜像到本仓库的 ghcr 包空间
 permissions:
@@ -24,15 +29,21 @@ jobs:
       - name: Generate matrix from mapping.json
         id: gen
         uses: actions/github-script@v7
+        env:
+          KMI_FILTER: ${{ github.event.inputs.kmi_filter }}
         with:
           script: |
             const fs = require('fs');
             const raw = fs.readFileSync('mapping.json', 'utf8');
             const data = JSON.parse(raw);
-            const matrix = (data.matrix || []).map(m => ({
-              source_name: m.android,
-              clang_name: m.clang,
-            }));
+            const filter = process.env.KMI_FILTER || '';
+            const matrix = (data.matrix || [])
+              .filter(m => !filter || m.android === filter)
+              .map(m => ({
+                source_name: m.android,
+                clang_name: m.clang,
+              }));
+            if (matrix.length === 0) core.setFailed(`kmi_filter 无匹配: ${filter}`);
             core.setOutput('matrix', JSON.stringify(matrix));
   
   toolchains:

@@ -21,7 +21,7 @@ echo "== QEMU boot: $KMI, module: $KO =="
 timeout 300 qemu-system-aarch64 -M virt -cpu max -m 4G -smp 4 -nographic \
     -kernel "$KERNEL" -initrd "$WORK/rootfs.cpio.gz" \
     -append "console=ttyAMA0 earlycon=pl011,mmio32,0x09000000 rdinit=/init panic=-1" \
-    -no-reboot > "$WORK/console.log" 2>&1 || true
+    -no-reboot -nic none > "$WORK/console.log" 2>&1 || true
 
 cp "$WORK/console.log" ./console.log 2>/dev/null || true
 tail -40 "$WORK/console.log"

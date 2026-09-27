@@ -1,0 +1,42 @@
+name: QEMU Load Test
+
+# ============ 模板：复制到你的模块仓库使用 ============
+# 把本文件复制到你仓库的 .github/workflows/ 下，即可拥有内核模块加载回归：
+#   构建模块（在 ddk 镜像内）→ QEMU 启动镜像自带内核 → finit_module 加载
+#   → 三态判定（PASS / 内核崩溃 / 被加载器拒绝），失败原因直接打印在 CI 日志。
+# 前提：模块用根目录 Makefile 构建（make KDIR=... 产出 hack.ko）；
+#       产物名或构建命令不同的话，改 "Build module & QEMU load test" 步骤。
+# 也可以把 on: 改成 push/pull_request 自动触发。
+
+on:
+  workflow_dispatch:
+    inputs:
+      kmi:
+        description: 'KMI（镜像/内核版本，如 android16-6.12）'
+        required: true
+        default: 'android16-6.12'
+      image_tag:
+        description: 'ddk 镜像 tag（如 android16-6.12-20260927；留空则用 KMI 裸名）'
+        required: false
+        default: ''
+      image:
+        description: 'ddk 镜像完整引用（含命名空间）'
+        required: false
+        default: 'ghcr.io/nuonb/ddk'
+
+permissions:
+  contents: read
+
+jobs:
+  qemu-load-test:
+    runs-on: ubuntu-latest
+    container: ${{ inputs.image }}:${{ inputs.image_tag != '' && inputs.image_tag || inputs.kmi }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Build module & QEMU load test
+      run: |
+        make KDIR=/opt/ddk/kdir/${{ inputs.kmi }}
+        ls -la hack.ko
+        /test/run.sh hack.ko ${{ inputs.kmi }}

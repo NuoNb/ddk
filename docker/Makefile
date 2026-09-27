@@ -87,6 +87,7 @@ build:
 	  --build-arg REVISION=$(REV) \
 	  --build-arg CREATED=$(DATE) \
 	  -f $(ROOT)/docker/ddk/Dockerfile \
+	  -t $(REG)/$(IMG):$(VER) \
 	  -t $(REG)/$(IMG):$(VER)$(TAG_SUFFIX) $(ROOT)
 
 build-all:
@@ -113,6 +114,7 @@ build-min:
 	  --build-arg REVISION=$(REV) \
 	  --build-arg CREATED=$(DATE) \
 	  -f $(ROOT)/docker/ddk-min/Dockerfile \
+	  -t $(REG)/ddk-min:$(VER) \
 	  -t $(REG)/ddk-min:$(VER)$(TAG_SUFFIX) $(ROOT)
 
 build-min-all:

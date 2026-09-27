@@ -50,7 +50,7 @@ toolchains:
 	  ANDROID=$$(echo $$pair | cut -d: -f1); \
 	  CLANG=$$(echo $$pair | cut -d: -f2); \
 	  RUST=$$(echo $$pair | cut -d: -f3); \
-	  if [ "$(FORCE)" = "1" ] || ! $(DOCKER) image inspect $(REG)/ddk-toolchain:$$ANDROID >/dev/null 2>&1; then \
+	  if [ "$(FORCE)" = "1" ] || ! $(DOCKER) manifest inspect $(REG)/ddk-toolchain:$$ANDROID >/dev/null 2>&1; then \
 	    echo "==> Building toolchain $(REG)/ddk-toolchain:$$ANDROID (clang: $$CLANG$${RUST:+, rust: $$RUST})"; \
 	    DOCKER_BUILDKIT=$(BUILDKIT) $(DOCKER) buildx build \
 	      $(if $(filter 1,$(PUSH)),--platform $(PLAT) --push,--load) \
